@@ -3,22 +3,26 @@
 # Date: 24, Nov 2017
 # Note: This code for construct an original random forest classifier.
 # Example:
-#   dataset = load_csv('wine.data.csv')
-#   rf = RandomForestClassifier(dataset, class_id=-1, max_depth=10, n_trees=500)
-#   print(rf.oob_score)
-# if you have a new data set to be classified, you can use:
-#   s = rf.predict(new_dataset)
-#   #accuracy
-#   print(s['score'])
-#   #output of prediction
-#   print(s['output'])
+# # load csv and transform it to a list.
+# dataset = load_csv('wine.data.csv')
+# # construct the random-forests.
+# rf = RandomForestClassifier(dataset, class_id=-1, max_depth=20, min_size=1, n_trees=500, n_features=False)
+# # output the oob test score.
+# print('oob_score:', rf.oob_score())
+# # output the test score on a test data set. I use the original data set here.
+# result = rf.predict(dataset)
+# print('predict score:', result['score'])
+# # output the feature importance sequence.
+# importance = rf.importance
+# print('feature importance:', importance)
 
 from csv import reader
 import random
 import math
+import copy
 
 
-def error_detection(dataset,class_id,max_depth,min_size,n_trees,n_features):
+def error_detection(dataset, class_id, max_depth, min_size, n_trees, n_features):
     """This function to check the parameters's type right or wrong."""
     errors = list()
     if type(dataset) != list:
@@ -141,7 +145,7 @@ def bootstrap(dataset):
             train.append(dataset[0])
             oob.append(dataset[1])
         else:
-            j = int(0.368*n_sample)
+            j = int(0.368 * n_sample)
             for i in range(j):
                 oob.append(i)
             for i in range(j, n_sample):
@@ -318,6 +322,7 @@ def accuracy_metric(actual, predicted):
 
 
 def oob_test(tree, oob_sample, class_id):
+    """Test the out-of-bag data on a single tree"""
     actual = [row[class_id] for row in oob_sample]
     predictions = [predict_oob(tree, row) for row in oob_sample]
     oob_score = accuracy_metric(actual, predictions)
@@ -325,14 +330,15 @@ def oob_test(tree, oob_sample, class_id):
 
 
 class Vector:
-    def __init__(self, trees, trees_accuracy, class_id):
+    def __init__(self, trees, trees_accuracy, class_id, importance):
         self.trees = trees
         self.trees_accuracy = trees_accuracy
         self.class_id = class_id
+        self.importance = importance
 
     def oob_score(self):
         scores = self.trees_accuracy
-        scores = sum(scores)*1.0/len(scores)
+        scores = sum(scores) * 1.0 / len(scores)
         return scores
 
     def predict(self, test_set):
@@ -347,7 +353,33 @@ class Vector:
         return {'score': score, 'output': predictions}
 
 
-def RandomForestClassifier(dataset=list(), class_id=-1, max_depth=100, min_size=1, n_trees=20, n_features=False):
+def permute_and_predict(oob_sample, tree, dict_key, accuracy, class_id):
+    """just permute every feature value randomly, and get the tree's accuracy"""
+    importance_tree = dict()
+    for i in dict_key:
+        oob_sample_copy = copy.deepcopy(oob_sample)
+        rowcol = list()
+        for row in oob_sample_copy:
+            rowcol.append(row[i])
+        random.shuffle(rowcol)
+        for index, row in enumerate(oob_sample_copy):
+            row[i] = rowcol[index]
+        # i_score is the score after permute the i'th feature test on the current tree
+        i_score = oob_test(tree, oob_sample_copy, class_id)
+        # so we need record the decline of the accuracy after permute a feature
+        importance_tree[i] = accuracy - i_score
+    return importance_tree
+
+
+def compute_importance(oob_sample, tree, dict_key, importance, accuracy, class_id):
+    importance_tree = permute_and_predict(oob_sample, tree, dict_key, accuracy, class_id)
+    update_importance = dict()
+    for i in dict_key:
+        update_importance[i] = importance[i] + importance_tree[i]
+    return update_importance
+
+
+def RandomForestClassifier(dataset=list(), class_id=-1, max_depth=50, min_size=1, n_trees=20, n_features=False):
     n_features = choose(n_features)
     # the detection step.
     if error_detection(dataset, class_id, max_depth, min_size, n_trees, n_features):
@@ -356,6 +388,12 @@ def RandomForestClassifier(dataset=list(), class_id=-1, max_depth=100, min_size=
     dataset = handle(dataset, class_id)
     trees = list()
     trees_accuracy = list()
+    # init the importance dictionary
+    dict_key = [i for i in range(len(dataset[0]))]
+    dict_key.pop(class_id)
+    importance = dict()
+    for i in dict_key:
+        importance[i] = 0
     # construct the decision tree successively.
     for i in range(n_trees):
         sample = bootstrap(dataset)
@@ -365,11 +403,22 @@ def RandomForestClassifier(dataset=list(), class_id=-1, max_depth=100, min_size=
         accuracy = oob_test(tree, oob_sample, class_id)
         trees.append(tree)
         trees_accuracy.append(accuracy)
-    return Vector(trees=trees, trees_accuracy=trees_accuracy, class_id= class_id)
+        # importance is a dictionary. Its key is the feature id, and its value is the importance of every feature, but
+        # it's a sum of importance, not average on every tree.
+        importance = compute_importance(oob_sample, tree, dict_key, importance, accuracy, class_id)
+        importance_list = sorted(importance.items(), key=lambda d: d[1], reverse=True)
+        importance_list = [i[0]+1 for i in importance_list]
+    return Vector(trees=trees, trees_accuracy=trees_accuracy, class_id=class_id, importance=importance_list)
 
-
+# load csv and transform it to a list.
 dataset = load_csv('wine.data.csv')
-rf = RandomForestClassifier(dataset, -1, max_depth=10, n_trees=500)
-print('oob_score:',rf.oob_score())
+# construct the random-forests.
+rf = RandomForestClassifier(dataset, class_id=-1, max_depth=20, min_size=1, n_trees=500, n_features=False)
+# output the oob test score.
+print('oob_score:', rf.oob_score())
+# output the test score on a test data set. I use the original data set here.
 result = rf.predict(dataset)
-print('predict score:',result['score'])
+print('predict score:', result['score'])
+# output the feature importance sequence.
+importance = rf.importance
+print('feature importance:', importance)
