@@ -12,12 +12,14 @@ result = rf.predict(dataset)
 print('predict score:',result['score'])
 ```
 ## Parameters
-**dataset**:list. You should transform your data to a list.  
-**class_id**:int. The index of class you want to predict.  
-**max_depth**:int. The maximum depth of the tree.  
-**min_size**:int. The minimum number of samples required to split an internal node.  
-**n_trees**:int. The number of tree you want to construct.  
-**n_features**:int. The number of features to consider when looking for the best split. The default value is sqrt(length of varibles).  
+     dataset:      list. You should transform your data to a list.  
+     class_id:     int. The index of class you want to predict.  
+     max_depth:    int. The maximum depth of the tree.  
+     min_size:     int. The minimum number of samples required to split an internal node.  
+     n_trees:      int. The number of tree you want to construct.  
+     n_features:   int. The number of features to consider when looking for the best split. The default value is sqrt(length of varibles). 
+ 
+
 ## Reference
 I implement this code based on Siraj Raval's code. But he used the cross-validation method to estimate the random forest's performance. It will be a long time if you train a large forest.  
 https://github.com/llSourcell/random_forests
