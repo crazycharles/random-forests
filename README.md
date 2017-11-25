@@ -5,7 +5,7 @@ And I use the out-of-bag data to estimate the random forest's performance which 
 
 ## Usage
 ```python
-# load csv and transform it to a list.
+# load csv and transform it into a list.
 dataset = load_csv('wine.data.csv')
 # construct the random-forests.
 rf = RandomForestClassifier(dataset, class_id=-1, max_depth=20, min_size=1, n_trees=500, n_features=False)
