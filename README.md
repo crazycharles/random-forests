@@ -5,11 +5,18 @@ And I use the out-of-bag data to estimate the random forest's performance which 
 
 ## Usage
 ```python
+# load csv and transform it to a list.
 dataset = load_csv('wine.data.csv')
-rf = RandomForestClassifier(dataset, class_id=-1, max_depth=100, min_size=1, n_trees=20, n_features=False)
-print('oob_score:',rf.oob_score())
+# construct the random-forests.
+rf = RandomForestClassifier(dataset, class_id=-1, max_depth=20, min_size=1, n_trees=500, n_features=False)
+# output the oob test score.
+print('oob_score:', rf.oob_score())
+# output the test score on a test data set. I use the original data set here.
 result = rf.predict(dataset)
-print('predict score:',result['score'])
+print('predict score:', result['score'])
+# output the feature importance sequence.
+importance = rf.importance
+print('feature importance:', importance)
 ```
 ## Parameters
      dataset:      list. You should transform your data to a list.  
