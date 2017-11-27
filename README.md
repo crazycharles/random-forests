@@ -1,7 +1,7 @@
 # random-forests
 
 A basic RandomForest algorithm which was written in python. It uses the Gini index to split every node.
-And I use the out-of-bag data to estimate the random forest's performance which can avoid the time-consuming cross-validation.
+By means of the out-of-bag data to estimate the random forest's performance which can avoid the time-consuming cross-validation.
 
 ## Background
 Random forests is an ensembling learning method. It consists of a set of decision trees. So it has significant performance on classification or regression tasks.
