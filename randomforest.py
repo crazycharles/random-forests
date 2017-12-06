@@ -279,7 +279,7 @@ def build_tree(train, class_id, max_depth, min_size, n_features):
     return root
 
 
-def choose(n_features):
+def choose(n_features,dataset):
     """This function  to choose the parameters, such as n_features, entropy function..."""
     # the default n_features equal to sqrt(variable_length).
     if not n_features:
@@ -380,7 +380,7 @@ def compute_importance(oob_sample, tree, dict_key, importance, accuracy, class_i
 
 
 def RandomForestClassifier(dataset=list(), class_id=-1, max_depth=50, min_size=1, n_trees=20, n_features=False):
-    n_features = choose(n_features)
+    n_features = choose(n_features,dataset)
     # the detection step.
     if error_detection(dataset, class_id, max_depth, min_size, n_trees, n_features):
         return
